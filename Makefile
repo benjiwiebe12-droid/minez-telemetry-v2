@@ -1,4 +1,4 @@
-.PHONY: up down install reset-db sample worker api test
+.PHONY: up down install reset-db load live worker api test
 
 PYTHON := python3
 PIP    := $(PYTHON) -m pip
@@ -15,14 +15,11 @@ install:
 reset-db:
 	docker compose exec postgres psql -U minez -d minez -f /docker-entrypoint-initdb.d/02_schema.sql
 
-sample:
-	$(PYTHON) generator/generate.py --sample --out data/sample.jsonl
-
 load:
-	$(PYTHON) generator/generate.py --load data/sample.jsonl
+	$(PYTHON) -m generator.stream --load data/sample.jsonl
 
 live:
-	$(PYTHON) generator/generate.py --live
+	$(PYTHON) -m generator.stream --live data/sample.jsonl
 
 worker:
 	$(PYTHON) -m app.worker
