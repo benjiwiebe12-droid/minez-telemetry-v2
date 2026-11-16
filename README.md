@@ -81,7 +81,11 @@ The mine operates two 12-hour shifts on the challenge day:
 
 ## Setup
 
+**Requires Python 3.12.** Some pinned packages (e.g. `psycopg[binary]==3.1.19`)
+don't install on Python 3.13 or newer.
+
 ```bash
+python3.12 -m venv .venv && source .venv/bin/activate
 make up          # start Postgres + Redis (Docker)
 make install     # pip install -r requirements.txt
 

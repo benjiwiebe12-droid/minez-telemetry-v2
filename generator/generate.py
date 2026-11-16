@@ -8,9 +8,9 @@ Modes:
   --load FILE     publish a .jsonl file to Redis (use after --sample)
 
 Usage:
-  python generator/generate.py --live
-  python generator/generate.py --sample --out data/sample.jsonl
-  python generator/generate.py --load data/sample.jsonl
+  python -m generator.generate --live
+  python -m generator.generate --sample --out data/sample.jsonl
+  python -m generator.generate --load data/sample.jsonl
 """
 
 import argparse

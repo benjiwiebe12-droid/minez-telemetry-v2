@@ -16,13 +16,13 @@ reset-db:
 	docker compose exec postgres psql -U minez -d minez -f /docker-entrypoint-initdb.d/02_schema.sql
 
 sample:
-	$(PYTHON) generator/generate.py --sample --out data/sample.jsonl
+	$(PYTHON) -m generator.generate --sample --out data/sample.jsonl
 
 load:
-	$(PYTHON) generator/generate.py --load data/sample.jsonl
+	$(PYTHON) -m generator.generate --load data/sample.jsonl
 
 live:
-	$(PYTHON) generator/generate.py --live
+	$(PYTHON) -m generator.generate --live
 
 worker:
 	$(PYTHON) -m app.worker
