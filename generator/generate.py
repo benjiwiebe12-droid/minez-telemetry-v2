@@ -59,6 +59,21 @@ GIBBERISH_POOL     = [
     "NaN NaN NaN undefined undefined",
     "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
 ]
+# Readable but physically impossible in an underground mine
+UNREALISTIC_POOL   = [
+    ("slip_fall",         "{name} jumped out of a plane and landed in {zone}"),
+    ("equipment_contact", "{name} got into a fight with sharks in the sump at {zone}"),
+    ("near_miss",         "{name} was abducted by aliens during the shift in {zone}"),
+    ("equipment_contact", "{name} wrestled a crocodile in the ventilation shaft at {zone}"),
+    ("near_miss",         "{name} was chased by a dinosaur through {zone}"),
+    ("slip_fall",         "{name} slipped on a banana peel and landed on the moon"),
+    ("gas_exposure",      "{name} was struck by lightning 300 m underground in {zone}"),
+    ("slip_fall",         "{name} fell off a skyscraper in {zone}"),
+    ("equipment_contact", "{name} crashed a jet ski into a haul truck in {zone}"),
+    ("near_miss",         "{name} fought off a polar bear near the crusher in {zone}"),
+    ("evacuation",        "{name} evacuated {zone} because a volcano erupted"),
+    ("slip_fall",         "{name} got a sunburn at the beach in {zone}"),
+]
 
 # speed / payload limits per truck state
 SPEED_RANGE   = {"hauling": (8.0, 25.0),  "idle": (0.0, 0.0),
@@ -77,6 +92,10 @@ class Simulator:
     def __init__(self, seed: int = SEED):
         self.rng = random.Random(seed)
         self._total = 0           # total events generated so far
+        self._batch_no = 0
+        # Separate RNG so this trap doesn't shift the main random sequence
+        self._unreal_rng  = random.Random(seed + 1)
+        self._unreal_pool = self._unreal_rng.sample(UNREALISTIC_POOL, len(UNREALISTIC_POOL))
         self._init_trucks()
         self._init_aq()
 
@@ -308,6 +327,25 @@ class Simulator:
         }
         return self._event("health_safety", worker, ts, payload)
 
+    # ── trap: unrealistic description ─────────────────────────────────────
+
+    def _unrealistic_event(self, ts: datetime) -> dict:
+        """Valid in every field, but the description can't happen underground."""
+        rng      = self._unreal_rng
+        worker   = rng.choice(WORKERS)
+        zone     = rng.choice(ZONES)
+        ev_type, text = self._unreal_pool[(self._batch_no // 110) % len(self._unreal_pool)]
+        payload = {
+            "zone_id":         zone,
+            "worker_id":       worker,
+            "event_type":      ev_type,
+            "severity":        rng.choice(["low", "medium"]),
+            "co_ppm_at_event": round(rng.uniform(3.0, 9.0), 1),
+            "description":     text.format(name=WORKER_NAMES[worker], zone=zone),
+            "location_city":   rng.choice(SAFE_CITIES),
+        }
+        return self._event("health_safety", worker, ts, payload)
+
     # ── helpers ───────────────────────────────────────────────────────────
 
     @staticmethod
@@ -358,6 +396,14 @@ class Simulator:
             events.append(self._zone_contradiction_event(ts + jitter))
 
         self.rng.shuffle(events)
+
+        # Unrealistic description (~1 every 110 batches). Added after the
+        # shuffle with its own RNG so the rest of the feed is unchanged.
+        if self._batch_no % 110 == 50:
+            jitter = timedelta(seconds=self._unreal_rng.uniform(0, 4.9))
+            pos    = self._unreal_rng.randint(0, len(events))
+            events.insert(pos, self._unrealistic_event(ts + jitter))
+        self._batch_no += 1
         return events
 
 
