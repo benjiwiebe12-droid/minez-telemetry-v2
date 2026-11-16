@@ -1,0 +1,5 @@
+-- Your schema goes here.
+-- Create tables to store the three telemetry streams and any rejected messages.
+--
+-- Hint: each event has a unique event_id — think about what that means for
+-- your insert strategy when the stream replays messages.
